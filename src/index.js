@@ -1,3 +1,4 @@
+
 import Phaser from "phaser";
 
 //const canvas = document.querySelector('canvas')
@@ -15,12 +16,19 @@ const config = {
     create: create
   }
 };
+
+new Phaser.Game(config);
+
+function preload () {
+  this.load.image('sky', 'assets/Background.png');
+}
+
+function create () {
+  this.add.image(400, 300, 'sky');
+}
+
 class Player{
   constructor(){
-    this.position={
-      x: 200,
-      y: 200
-    }
     this.velocity = {
       x:0,
       y:0
@@ -28,7 +36,7 @@ class Player{
     this.rotation = 0
 
     const image = new image()
-    image.src ='./assets/nave.png'
+    image.src ='Nave','./assets/spaceship.png'
     image.onload = () => {
       const scale = 0.15
       this.image = image
@@ -83,8 +91,8 @@ const keys = {
 
 function animate (){
   requestAnimationFrame (animate)
-  C.flellStyle = 'black'
-  C.fillRect(0,0,canvas.width,Canvas.height)
+  //C.flellStyle = 'black'
+  //C.fillRect(0,0,canvas.width,Canvas.height)
   player.udate()
 
   if(keys.a.pressed && player.preload.x >= 0){
@@ -107,12 +115,3 @@ animate()
 
 
 
-new Phaser.Game(config);
-
-function preload () {
-  this.load.image('sky', 'assets/sky.png');
-}
-
-function create () {
-  this.add.image(400, 300, 'sky');
-}

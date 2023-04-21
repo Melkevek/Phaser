@@ -10,150 +10,191 @@ const config = {
   },
   scene: {
     preload: preload,
-    create: create
+    create: create,
+    update: update
   }
-};
 
-//new Phaser.Game(config);
-var player;
-var bullet;
-var bullets;
+};
+keys:
+new Phaser.Game(config);
+
+var player= null;
+var bullets= null;
 var enemies;
 var score = 0;
 var highScore = localStorage.getItem('highscore') || 0;
 var scoreText;
-var highScoreText;
+
   
 function preload() 
   {
     //load assets like player image, enemy spritesheet, etc.
-    game.load.image('player' , './assets/spaceship.png');
-    game.load.spritesheet('enemy', './assets/enemy.png', 32, 32);
-    game.load.image('sky', 'assets/Background.png');
-
+    this.load.image('sky', 'assets/Background.png');
+    this.load.image('player','assets/spaceship.png');
+    this.load.image('enemy', 'assets/enemy.png');
+    this.load.image('bala', 'assets/Bala.png');
   }
   
 function create() 
   {
     // Create player object
-    player = game.add.sprite(game.world.centerX, game.world.centerY, 'player');
-    player.anchor.setTo(0.5, 0.5);
-    game.physics.enable(player, Phaser.Physics.ARCADE);
+    this.add.image(400, 300, 'sky');
+    player = this.physics.add.sprite(config.width /2 , 500, 'player');
+    this.keys = this.input.keyboard.addKeys("A,D,SPACE");
+    //player.anchor.setTo(0.5, 0.5);
     
-    // Set up bullets as a group with object pooling
-    bullets = game.add.group();
-    bullets.enableBody = true;
-    bullets.physicsBodyType = Phaser.Physics.ARCADE;
-    bullets.createMultiple(30, 'bullet');
-    bullets.setAll('anchor.x', 0.5);
-    bullets.setAll('anchor.y', 1);
-    bullets.setAll('outOfBoundsKill', true);
-    bullets.setAll('checkWorldBounds', true);
+    // // Set up bullets as a group with object pooling
+    bullets = this.physics.add.group({
+      defaultKey:"bala", maxSize: 100
+    });
+    // bullets.enableBody = true;
+    // bullets.physicsBodyType = Phaser.Physics.ARCADE;
+    // bullets.createMultiple(30, 'bullet');
+    // bullets.setAll('anchor.x', 0.5);
+    // bullets.setAll('anchor.y', 1);
+    // bullets.setAll('outOfBoundsKill', true);
+    // bullets.setAll('checkWorldBounds', true);
     
-    // Create enemy group with physics enabled
-    enemies = game.add.group();
-    enemies.enableBody = true;
-    enemies.physicsBodyType = Phaser.Physics.ARCADE;
-    
-    // Add enemy sprites to the group
-    for (var i = 0; i < 10; i++) 
-    {
-      var enemy = enemies.create(i * 48, 0, 'enemy');
-      enemy.anchor.setTo(0.5, 0.5);
-      enemy.animations.add('move', [0, 1, 2, 3], 10, true);
-      enemy.play('move');
-      enemy.body.velocity.y = 50 + Math.random() * 100;
-    }
+    // // Create enemy group with physics enabled
+   enemies = this.physics.add.group({
+    key:'enemy', repeat: 5,  setXY: {x:20, y:45, stepX: 50} 
+   });
   
-    // Add keyboard event listeners to move the player
-    var leftKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
-    var rightKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
-    var cursors = game.input.keyboard.createCursorKeys();
-    leftKey.onDown.add(function() { player.body.velocity.x = -200; });
-    rightKey.onDown.add(function() { player.body.velocity.x = 200; });
-    cursors.left.onDown.add(function() { player.body.velocity.x = -200; });
-    cursors.right.onDown.add(function() { player.body.velocity.x = 200; });
-    leftKey.onUp.add(function() { player.body.velocity.x = 0; });
-    rightKey.onUp.add(function() { player.body.velocity.x = 0; });
-    cursors.left.onUp.add(function() { player.body.velocity.x = 0; });
-    cursors.right.onUp.add(function() { player.body.velocity.x = 0; });
     
-    // Set up score and high score text
-    scoreText = game.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#fff' });
-    highScoreText = game.add.text(600, 16, 'High Score: ' + highScore, { fontSize: '32px', fill: '#fff' });
+    // // Add enemy sprites to the group
+    // for (var i = 0; i < 10; i++) 
+    // {
+    //   var enemy = enemies.create(i * 48, 0, 'enemy');
+    //   enemy.anchor.setTo(0.5, 0.5);
+    //   enemy.animations.add('move', [0, 1, 2, 3], 10, true);
+    //   enemy.play('move');
+    //   enemy.body.velocity.y = 50 + Math.random() * 100;
+    // }
+  
+    // // Add keyboard event listeners to move the player
+    
+    // // Set up score and high score text
+    scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '30px', fill: '#00ff00' });
+    //highScoreText = this.add.text(600, 16, 'High Score: ' + highScore, { fontSize: '32px', fill: '#fff' });
   }
   
   function update() 
   {
-    // Check for bullet and enemy collision
-    game.physics.arcade.overlap(bullets, enemies, bulletHitEnemy, null, this);
+    if(score > highScore )
+    {
+      highScore = score;
+    }
+    scoreText.setText("Score: " + score + "   High Score: "+highScore);
+    this.physics.add.overlap(bullets, enemies, hitEnemy, null, this);
     
-    // Check for player and enemy collision
-    game.physics.arcade.overlap(player, enemies, playerHitEnemy, null, this);
-    
-    // Generate bullets on spacebar press
-    if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
+    if(this.keys.SPACE.isDown)
+    {
       fireBullet();
     }
-    
-    // Move enemies and update score
-    enemies.forEach(function(enemy) {
-      enemy.body.position.y += enemy.body.velocity.y * game.time.physicsElapsed;
-      if (enemy.body.position.y > game.world.height) 
+    if (this.keys.A.isDown)
+    {
+        if(player.body.x > 0)
       {
-        enemy.body.position.y = 0;
-        enemy.body.position.x = Math.random() * game.world.width;
-        score++;
-        scoreText.text = 'Score: ' + score;
-        if (score > highScore) 
-        {
-          highScore = score;
-          localStorage.setItem('highscore', highScore);
-          highScoreText.text = 'High Score: ' + highScore;
-        }
+           player.body.velocity.x = -150;
       }
-    });
+      else
+      {
+        player.body.velocity.x = 0;
+      }
+    }
+    else if (this.keys.D.isDown)
+    {
+        if(player.body.x < config.width - player.width)
+      {
+           player.body.velocity.x = 150;
+      }
+      else
+      {
+        player.body.velocity.x = 0;
+      }
+    }
+     else
+      {
+        player.body.velocity.x = 0;
+      }
+    
+    // // Check for bullet and enemy collision
+    // this.physics.arcade.overlap(bullets, enemies, bulletHitEnemy, null, this);
+    
+    // // Check for player and enemy collision
+    //this.physics.arcade.overlap(player, enemies, playerHitEnemy, null, this);
+    
+    // // Generate bullets on spacebar press
+    // if (this.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
+    //   fireBullet();
+    // }
+    
+    // // Move enemies and update score
+    // enemies.forEach(function(enemy) {
+    //   enemy.body.position.y += enemy.body.velocity.y * this.time.physicsElapsed;
+    //   if (enemy.body.position.y > this.world.height) 
+    //   {
+    //     enemy.body.position.y = 0;
+    //     enemy.body.position.x = Math.random() * this.world.width;
+    //     score++;
+    //     scoreText.text = 'Score: ' + score;
+    //     if (score > highScore) 
+    //     {
+    //       highScore = score;
+    //       localStorage.setItem('highscore', highScore);
+    //       highScoreText.text = 'High Score: ' + highScore;
+    //     }
+    //   }
+    // });
+  }
+
+  function hitEnemy(bullet, alien)
+{
+  score += 100;
+  bullet.destroy();
+  var alienX = (Math.random() * 500);
+  var alienY = (Math.random() * 500);
+  alien.body.x = alienX;
+  alien.body.y = alienY;
+}
+  
+   function fireBullet() 
+  {
+   var bullet = bullets.get(player.x, player.y);
+   if (bullet)
+   {
+    bullet.body.velocity.y = -200;
+   }  
   }
   
-  function fireBullet() 
-  {
-    bullet = bullets.getFirstExists(false);
-    if (bullet) {
-      bullet.reset(player.x, player.y - 20);
-      bullet.body.velocity.y = -400;
-    }
-  }
   
-  function bulletHitEnemy(bullet, enemy) 
-  {
-    bullet.kill();
-    enemy.kill();
-    score++;
-    scoreText.text = 'Score: ' + score;
-    if (score > highScore) 
-    {
-      highScore = score;
-      localStorage.setItem('highscore', highScore);
-      highScoreText.text = 'High Score: ' + highScore;
-    }
-  }
+  // function bulletHitEnemy(bullet, enemy) 
+  // {
+  //   bullet.kill();
+  //   enemy.kill();
+  //   score++;
+  //   scoreText.text = 'Score: ' + score;
+  //   if (score > highScore) 
+  //   {
+  //     highScore = score;
+  //     localStorage.setItem('highscore', highScore);
+  //     highScoreText.text = 'High Score: ' + highScore;
+  //   }
+  // }
   
-  function playerHitEnemy(player, enemy) 
-  {
-    enemy.kill();
-    player.kill();
-    alert('Game over! Your score is ' + score);
-    if (score > highScore) 
-    {
-      highScore = score;
-      localStorage.setItem('highscore', highScore);
-      highScoreText.text = 'High Score: ' + highScore;
-    }
-    function create () 
-    {
-      this.add.image(400, 300, 'sky');
-    }
-  }
+  // function playerHitEnemy(player, enemy) 
+  // {
+  //   enemy.kill();
+  //   player.kill();
+  //   alert('this over! Your score is ' + score);
+  //   if (score > highScore) 
+  //   {
+  //     highScore = score;
+  //     localStorage.setItem('highscore', highScore);
+  //     highScoreText.text = 'High Score: ' + highScore;
+  //   }
+    
+  // }
    
   
   
